@@ -51,7 +51,7 @@ function displayWeather(data) {
     const iconCode = data.weather[0].icon;
     const iconUrl = `https://openweathermap.org/img/wn/${iconCode}@4x.png`;
 
-    const temperatureHTML = `<p>${temperature}C</p>`;
+    const temperatureHTML = `<p>${temperature}°C</p>`;
     const weatherHtml = `<p>${cityName}</p><p>${description}</p>`;
 
     tempDivInfo.innerHTML = temperatureHTML;
@@ -75,12 +75,15 @@ function displayHourlyForecast(hourlyData) {
     const iconUrl = `https://openweathermap.org/img/wn/${iconCode}.png`;
 
     const hourlyItemHtml = `
-        <div class="hourly-item">
-            <span>${hour}:00</span>
-            <img src = "${iconUrl}" alt = "Hourly Weather Icon">
-            <span>${temperature}C</span>
-        </div>
-    `;
+          <div class="hourly-item">
+              <span>${hour}:00</span>
+              <img src="${iconUrl}" alt="Hourly Weather Icon">
+              <span>${temperature}°C</span>
+          </div>
+      `;
+
+    // Append the hourly item to the forecast div
+    hourlyForecastDiv.innerHTML += hourlyItemHtml;
   });
 }
 
