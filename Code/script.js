@@ -1,3 +1,8 @@
+// Global variables
+var currentUnit = "C"; // Start with Celsius
+var currentTemperatureData = {}; // For main weather
+var hourlyTemperatureData = []; // For hourly forecast
+
 function getWeather() {
   const apiKey = "6f3e2e03ac3b1a1412782abe7f03c35b";
   const city = document.getElementById("city").value;
@@ -35,56 +40,121 @@ function displayWeather(data) {
   const tempDivInfo = document.getElementById("temp-div");
   const weatherInfoDiv = document.getElementById("weather-info");
   const weatherIcon = document.getElementById("weather-icon");
-  const hourlyForecastDiv = document.getElementById("hourly-forecast");
 
   // Clear previous content
   weatherInfoDiv.innerHTML = "";
-  hourlyForecastDiv.innerHTML = "";
   tempDivInfo.innerHTML = "";
 
   if (data.cod === "404") {
     weatherInfoDiv.innerHTML = `<p>${data.message}</p>`;
   } else {
+    const tempKelvin = data.main.temp;
+    const tempCelsius = Math.round(tempKelvin - 273.15);
+    const tempFahrenheit = Math.round(((tempKelvin - 273.15) * 9) / 5 + 32);
     const cityName = data.name;
-    const temperature = Math.round(data.main.temp - 273.15);
     const description = data.weather[0].description;
     const iconCode = data.weather[0].icon;
     const iconUrl = `https://openweathermap.org/img/wn/${iconCode}@4x.png`;
 
-    const temperatureHTML = `<p>${temperature}°C</p>`;
-    const weatherHtml = `<p>${cityName}</p><p>${description}</p>`;
+    // Store temperature data
+    currentTemperatureData = {
+      cityName: cityName,
+      description: description,
+      iconUrl: iconUrl,
+      tempCelsius: tempCelsius,
+      tempFahrenheit: tempFahrenheit,
+    };
 
-    tempDivInfo.innerHTML = temperatureHTML;
+    // Update weather info
+    const weatherHtml = `<p>${cityName}</p><p>${description}</p>`;
     weatherInfoDiv.innerHTML = weatherHtml;
     weatherIcon.src = iconUrl;
     weatherIcon.alt = description;
+
+    // Update temperatures
+    updateTemperatures();
 
     showImage();
   }
 }
 
 function displayHourlyForecast(hourlyData) {
-  const hourlyForecastDiv = document.getElementById("hourly-forecast");
-  const next24Hours = hourlyData.slice(0, 8);
+  const next24Hours = hourlyData.slice(0, 8); // Next 24 hours (3-hour intervals)
+  hourlyTemperatureData = []; // Reset
 
   next24Hours.forEach((item) => {
     const dateTime = new Date(item.dt * 1000);
     const hour = dateTime.getHours();
-    const temperature = Math.round(item.main.temp - 273.15);
+    const tempKelvin = item.main.temp;
+    const tempCelsius = Math.round(tempKelvin - 273.15);
+    const tempFahrenheit = Math.round(((tempKelvin - 273.15) * 9) / 5 + 32);
     const iconCode = item.weather[0].icon;
     const iconUrl = `https://openweathermap.org/img/wn/${iconCode}.png`;
 
+    // Store data
+    hourlyTemperatureData.push({
+      hour: hour,
+      tempCelsius: tempCelsius,
+      tempFahrenheit: tempFahrenheit,
+      iconUrl: iconUrl,
+    });
+  });
+
+  // Render the hourly forecast
+  renderHourlyForecast();
+}
+
+function renderHourlyForecast() {
+  const hourlyForecastDiv = document.getElementById("hourly-forecast");
+  hourlyForecastDiv.innerHTML = ""; // Clear previous content
+
+  hourlyTemperatureData.forEach((item) => {
+    const temperature =
+      currentUnit === "C" ? item.tempCelsius : item.tempFahrenheit;
+    const unitSymbol = currentUnit === "C" ? "°C" : "°F";
+
     const hourlyItemHtml = `
-          <div class="hourly-item">
-              <span>${hour}:00</span>
-              <img src="${iconUrl}" alt="Hourly Weather Icon">
-              <span>${temperature}°C</span>
-          </div>
-      `;
+      <div class="hourly-item">
+        <span>${item.hour}:00</span>
+        <img src="${item.iconUrl}" alt="Hourly Weather Icon">
+        <span>${temperature}${unitSymbol}</span>
+      </div>
+    `;
 
     // Append the hourly item to the forecast div
     hourlyForecastDiv.innerHTML += hourlyItemHtml;
   });
+}
+
+function updateTemperatures() {
+  // Update main temperature
+  const tempDivInfo = document.getElementById("temp-div");
+
+  if (
+    currentTemperatureData &&
+    currentTemperatureData.tempCelsius !== undefined
+  ) {
+    const temperature =
+      currentUnit === "C"
+        ? currentTemperatureData.tempCelsius
+        : currentTemperatureData.tempFahrenheit;
+    const unitSymbol = currentUnit === "C" ? "°C" : "°F";
+
+    const temperatureHTML = `<p>${temperature}${unitSymbol}</p>`;
+    tempDivInfo.innerHTML = temperatureHTML;
+  }
+
+  // Update hourly forecast
+  renderHourlyForecast();
+}
+
+function toggleUnit() {
+  currentUnit = currentUnit === "C" ? "F" : "C";
+  document.getElementById("unit-toggle").textContent =
+    currentUnit === "C" ? "°F" : "°C";
+
+  // Update the displayed temperatures
+  updateTemperatures();
 }
 
 function showImage() {
